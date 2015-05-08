@@ -1,5 +1,6 @@
 #coursera_04_ExploratoryDataAnalysis/project01 2015
 #verify some basic requirements like platform is correct
+
 switch(Sys.info()[['sysname']],
        Windows= {print("This a Windows PC. This script was not written for it ! \n It may not work correctly  ")},
        Linux  = {print("This is  Gnu/Linux Os it should work like a charm. be sure wget is installed")},
@@ -10,7 +11,7 @@ if (!"sqldf" %in% rownames(installed.packages())) {
   install.packages("sqldf")
 }
 library(sqldf)
-#some basic constants variables
+#some basic constants variables 
 data_url <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
 data_archive_filename <- "exdata_data_household_power_consumption.zip"
 data_dir <- "data/"      # local directory where the archive will be extracted
@@ -46,29 +47,42 @@ if (!file.exists(data_dir) && (!file.exists(data_filename))){
 # 7 - Sub_metering_1: energy sub-metering No. 1 (in watt-hour of active energy). It corresponds to the kitchen, containing mainly a dishwasher, an oven and a microwave (hot plates are not electric but gas powered).
 # 8 - Sub_metering_2: energy sub-metering No. 2 (in watt-hour of active energy). It corresponds to the laundry room, containing a washing-machine, a tumble-drier, a refrigerator and a light.
 # 9 - Sub_metering_3: energy sub-metering No. 3 (in watt-hour of active energy). It corresponds to an electric water-heater and an air-conditioner.
-print("Now i will read the data in a dataframe (variable df), but only for those dates : 2007-02-01 and 2007-02-02")
+print("Now i will read the data inside a dataframe, (variable df) but only for those dates : 2007-02-01 and 2007-02-02")
 df <- read.csv2.sql(data_filename, ,sql = "select * from file where Date = '1/2/2007' OR Date = '2/2/2007'")
-print("Here is what df looks like :")
-str(df)
-#well for this plot 1 the next conversion is not that important...
 df$Date <- as.Date(df$Date, format="%d/%m/%Y")
-
+#try to be "portable" as far as can and i know at this point of my minimal knowledge...
 switch(Sys.info()[['sysname']],
        Windows= {print("This a Windows PC. This script was not written for it ! \n It may not work correctly  ")},
        Linux  = {x11(width = 4,height = 4)},
        Darwin = {quartz(width = 4,height = 4)}
 )
-
-
-## Plot 1
-print("Now let's make a nice histogram plot to screen with the Global active power frequency ")
-hist(df$Global_active_power, main="Global Active Power", xlab="Global Active Power (kilowatts)", ylab="Frequency", col="Red")
+datetime <- paste(as.Date(df$Date), df$Time)
+#strptime gives a Posixlt but what I really need is to convert it to Posixct format 
+#df$Datetime <- strptime(datetime,"%Y-%m-%d %H:%M:%S")
+df$Datetime <- as.POSIXct(strptime(datetime,"%Y-%m-%d %H:%M:%S"))
+print("Here is what df looks like after the date and time  'format crunching' to get a valid one for this plot  :")
+str(df)
+print("Now I need to adjust the locale because I'm not on an english computer and days are in french...")
+if (Sys.getlocale(category = "LC_TIME") != "en_US.UTF-8") {
+  Sys.setlocale(category = "LC_TIME","en_US.UTF-8")
+}
+## Plot 3
+print("Now let's make a nice plot to screen with the Global active power per day ")
+plot(df$Global_active_power~df$Datetime, type="l",ylab="Global Active Power (kilowatts)", xlab="")
 #using dev.copy can have some neirds side effects so i use the png() function for the official result image
 # i also decide to put a white backgroung based on discussion from 
 # https://class.coursera.org/exdata-014/forum/thread?thread_id=13
-#dev.copy(png, file="dev_copy_plot1.png", height=480, width=480)
+#dev.copy(png, file="dev_copy_plot2.png", height=480, width=480)
 dev.off()
 print("Now let's make a nice plot to file with the png() function  with the Global active power per day ")
-png(filename = "plot1.png", height=480, width=480)
-hist(df$Global_active_power, main="Global Active Power", xlab="Global Active Power (kilowatts)", ylab="Frequency", col="Red")
+png(filename = "plot3.png", height=480, width=480)
+with(df,
+     {
+       plot(Sub_metering_1~Datetime, type="l",ylab="Energy sub metering", xlab="",col = "black")
+       lines(Sub_metering_2~Datetime, type="l", col = "red")
+       lines(Sub_metering_3~Datetime, type="l", col = "blue") 
+       legend("topright", lty = 1, col = c("black", "red", "blue"), legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+     }
+)
 dev.off()
+
