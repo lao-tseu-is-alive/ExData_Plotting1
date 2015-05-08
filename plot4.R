@@ -50,7 +50,6 @@ if (!file.exists(data_dir) && (!file.exists(data_filename))){
 print("Now i will read the data inside a dataframe, (variable df) but only for those dates : 2007-02-01 and 2007-02-02")
 df <- read.csv2.sql(data_filename, ,sql = "select * from file where Date = '1/2/2007' OR Date = '2/2/2007'")
 df$Date <- as.Date(df$Date, format="%d/%m/%Y")
-
 datetime <- paste(as.Date(df$Date), df$Time)
 #strptime gives a Posixlt but what I really need is to convert it to Posixct format 
 #df$Datetime <- strptime(datetime,"%Y-%m-%d %H:%M:%S")
@@ -61,18 +60,22 @@ print("Now I need to adjust the locale because I'm not on an english computer an
 if (Sys.getlocale(category = "LC_TIME") != "en_US.UTF-8") {
   Sys.setlocale(category = "LC_TIME","en_US.UTF-8")
 }
-## Plot 3
-print("Now let's make a nice line plot with the 3  Energy sub metering and save it in plot3.png")
+## Plot 4
+print("Now let's make a nice plot to screen with the Global active power per day ")
 #using dev.copy can have some neirds side effects so i use the png() function for the official result image
 # i also decide to put a white backgroung based on discussion from 
 # https://class.coursera.org/exdata-014/forum/thread?thread_id=13
-png(filename = "plot3.png", height=480, width=480)
+png(filename = "plot4.png", height=480, width=480)
+par(mfrow = c(2, 2))
 with(df,
      {
+       plot(Global_active_power~Datetime, type="l",ylab="Global Active Power", xlab="")
+       plot(Voltage~Datetime, type="l",ylab="Voltage", xlab="datetime")
        plot(Sub_metering_1~Datetime, type="l",ylab="Energy sub metering", xlab="",col = "black")
        lines(Sub_metering_2~Datetime, type="l", col = "red")
        lines(Sub_metering_3~Datetime, type="l", col = "blue") 
-       legend("topright", lty = 1, col = c("black", "red", "blue"), legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+       legend("topright",bty="n" , lty = 1, col = c("black", "red", "blue"), legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+       plot(Global_reactive_power~Datetime, type="l",ylab="Global_reactive_power", xlab="datetime")
      }
 )
 dev.off()
